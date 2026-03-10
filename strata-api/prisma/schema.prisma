@@ -12,3 +12,153 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model User {
+  user_id    Int      @id @default(autoincrement())
+  photo      String?
+  name       String
+  username   String   @unique
+  email      String   @unique
+  password   String
+  
+  trips      Trip_Members[]
+  expenses   Expense[]
+  messages   Message[]
+
+  sent_friendships     Friendship[] @relation("SentFriendships")
+  received_friendships Friendship[] @relation("ReceivedFriendships")
+  
+  sent_follows         Follows[]    @relation("SentFollows")
+  received_follows     Follows[]    @relation("ReceivedFollows")
+}
+
+model Friendship {
+  requester_id Int
+  receiver_id  Int
+  status       String?
+
+  created_at   DateTime? @default(now())
+  updated_at   DateTime? @updatedAt
+  deleted_at   DateTime?
+
+  requester User @relation("SentFriendships", fields: [requester_id], references: [user_id])
+  receiver  User @relation("ReceivedFriendships", fields: [receiver_id], references: [user_id])
+
+  @@id([requester_id, receiver_id])
+}
+
+model Follows {
+  requester_id Int
+  receiver_id  Int
+  status       String?
+
+  created_at   DateTime? @default(now())
+  updated_at   DateTime? @updatedAt
+  deleted_at   DateTime?
+
+  requester User @relation("SentFollows", fields: [requester_id], references: [user_id])
+  receiver  User @relation("ReceivedFollows", fields: [receiver_id], references: [user_id])
+
+  @@id([requester_id, receiver_id])
+}
+
+model Trip {
+  trip_id         String   @id @default(uuid())
+  banner          String?
+  name            String
+  visibility      String?
+  start_date      DateTime?
+  end_date        DateTime?
+  budget_level    String
+  intensity_level String
+  travel_style    String
+  rating          Float?
+
+  members       Trip_Members[]
+  expenses      Expense[]
+  locations     Location[]
+  destinations  Destination[]
+  chats         Chat[]
+
+  created_at    DateTime? @default(now())
+  updated_at    DateTime? @updatedAt
+  deleted_at    DateTime?
+}
+
+model Trip_Members {
+  trip_members_id String   @id @default(uuid())
+  user_id         Int
+  trip_id         String
+  personal_budget Float?
+
+  user            User     @relation(fields: [user_id], references: [user_id])
+  trip            Trip     @relation(fields: [trip_id], references: [trip_id])
+}
+
+model Destination {
+  destination_id String    @id @default(uuid())
+  trip_id        String
+  destination    String
+
+  trip           Trip      @relation(fields: [trip_id], references: [trip_id])
+
+  created_at     DateTime? @default(now())
+  updated_at     DateTime? @updatedAt
+  deleted_at     DateTime?
+}
+
+model Location {
+  location_id    String    @id @default(uuid())
+  trip_id        String
+  name           String
+  scheduled_time DateTime?
+  day            Int
+  ticket_url     String?
+
+  trip           Trip      @relation(fields: [trip_id], references: [trip_id])
+
+  created_at     DateTime? @default(now())
+  updated_at     DateTime? @updatedAt
+  deleted_at     DateTime?
+}
+
+model Expense {
+  expense_id String    @id @default(uuid())
+  trip_id    String
+  user_id    Int
+  type       String
+  amount     Float
+
+  trip       Trip      @relation(fields: [trip_id], references: [trip_id])
+  user       User      @relation(fields: [user_id], references: [user_id])
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  deleted_at DateTime?
+}
+
+model Chat {
+  chat_id    String    @id @default(uuid())
+  trip_id    String
+  
+  messages   Message[]
+  trip       Trip      @relation(fields: [trip_id], references: [trip_id])
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  deleted_at DateTime?
+}
+
+model Message {
+  message_id String    @id @default(uuid())
+  user_id    Int
+  chat_id    String
+  message    String
+
+  user       User      @relation(fields: [user_id], references: [user_id])
+  chat       Chat      @relation(fields: [chat_id], references: [chat_id])
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  deleted_at DateTime?
+}
