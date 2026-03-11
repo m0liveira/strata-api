@@ -46,5 +46,8 @@ jobs:
       - name: Sync Database
         run: npx prisma db push
 
+      - name: Run Unit Tests
+        run: npm run test
+
       - name: Production Build
         run: npm run build
