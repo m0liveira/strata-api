@@ -9,6 +9,9 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./strata-api
 
     services:
       postgres:
@@ -36,6 +39,7 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
+          cache-dependency-path: './strata-api/package-lock.json'
 
       - name: Install dependencies
         run: npm install
