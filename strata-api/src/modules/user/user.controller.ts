@@ -15,7 +15,7 @@ export class UserController {
 
   @Get('me')
   @ApiOperation({ summary: 'Get authenticated user profile' })
-  getProfile(@Request() req) {
+  getUserData(@Request() req) {
     return this.userService.getUserData(req.user.userId);
   }
 
