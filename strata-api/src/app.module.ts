@@ -6,10 +6,13 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { FriendshipModule } from './modules/friendship/friendship.module';
 import { FollowsModule } from './modules/follows/follows.module';
+import { TripMembersController } from './modules/trip-members/trip-members.controller';
+import { TripMembersService } from './modules/trip-members/trip-members.service';
+import { TripMembersModule } from './modules/trip-members/trip-members.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UserModule, FriendshipModule, FollowsModule],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [PrismaModule, AuthModule, UserModule, FriendshipModule, FollowsModule, TripMembersModule],
+  controllers: [AppController, TripMembersController],
+  providers: [AppService, TripMembersService],
 })
 export class AppModule {}

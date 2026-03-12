@@ -90,6 +90,7 @@ model Trip_Members {
   user_id         Int
   trip_id         String
   personal_budget Float?
+  status          String @default("PENDING")
 
   user            User     @relation(fields: [user_id], references: [user_id])
   trip            Trip     @relation(fields: [trip_id], references: [trip_id])
