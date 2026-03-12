@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Controller, Post, Patch, Delete, Get, Param, Request, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { FriendshipService } from './friendship.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
