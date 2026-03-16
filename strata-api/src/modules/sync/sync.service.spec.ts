@@ -4,10 +4,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SyncService } from './sync.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { SyncGateway } from './sync.gateway';
 
 describe('SyncService', () => {
   let service: SyncService;
   let prisma: PrismaService;
+  let syncGateway: SyncGateway;
 
   const mockPrismaService = {
     $transaction: jest.fn().mockImplementation((cb) => cb(mockPrismaService)),
@@ -18,16 +20,22 @@ describe('SyncService', () => {
     expense: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn(), findMany: jest.fn() },
   };
 
+  const mockSyncGateway = {
+    notifySyncNeeded: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SyncService,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: SyncGateway, useValue: mockSyncGateway },
       ],
     }).compile();
 
     service = module.get<SyncService>(SyncService);
     prisma = module.get<PrismaService>(PrismaService);
+    syncGateway = module.get<SyncGateway>(SyncGateway);
   });
 
   afterEach(() => {
@@ -35,8 +43,8 @@ describe('SyncService', () => {
   });
 
   describe('push', () => {
-    // Test #1: Process creations and deletions within a transaction
-    it('Should process creations and deletions within a transaction', async () => {
+    // Test #1: Process creations and deletions within a transaction and notify clients
+    it('Should process creations and deletions within a transaction and notify clients', async () => {
       const pushData: any = {
         changes: {
           trips: {
@@ -65,6 +73,8 @@ describe('SyncService', () => {
         data: expect.objectContaining({ deleted_at: expect.any(Date) }),
       });
 
+      expect(syncGateway.notifySyncNeeded).toHaveBeenCalledWith('trip-1');
+      expect(syncGateway.notifySyncNeeded).toHaveBeenCalledWith('trip-2');
       expect(result).toEqual({ success: true });
     });
   });
