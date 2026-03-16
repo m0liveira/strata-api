@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SyncPushDto } from './dto/sync.dto';
@@ -10,86 +12,60 @@ export class SyncService {
         const { changes } = data;
 
         await this.prisma.$transaction(async (tx) => {
-            // Trips
             if (changes.trips) {
-                for (const item of changes.trips.created) {
+                await this.processModel(tx.trip, 'trip_id', changes.trips, async (item) => {
                     await tx.trip.create({
                         data: {
                             ...item,
-                            members: {
-                                create: {
-                                    user_id: userId,
-                                    status: 'ACCEPTED',
-                                },
-                            },
+                            members: { create: { user_id: userId, status: 'ACCEPTED' } },
                         },
                     });
-                }
-                
-                for (const item of changes.trips.updated) {
-                    const existing = await tx.trip.findUnique({ where: { trip_id: item.trip_id } });
-                    const itemDate = item.updated_at ? new Date(item.updated_at) : new Date();
-
-                    if (existing && (!existing.updated_at || itemDate > existing.updated_at)) {
-                        await tx.trip.update({ where: { trip_id: item.trip_id }, data: item });
-                    }
-                }
-                for (const id of changes.trips.deleted) {
-                    await tx.trip.update({ where: { trip_id: id }, data: { deleted_at: new Date() } });
-                }
+                });
             }
 
-            // Destinations
             if (changes.destinations) {
-                for (const item of changes.destinations.created) await tx.destination.create({ data: item });
-
-                for (const item of changes.destinations.updated) {
-                    const existing = await tx.destination.findUnique({ where: { destination_id: item.destination_id } });
-                    const itemDate = item.updated_at ? new Date(item.updated_at) : new Date();
-
-                    if (existing && (!existing.updated_at || itemDate > existing.updated_at)) {
-                        await tx.destination.update({ where: { destination_id: item.destination_id }, data: item });
-                    }
-                }
-                for (const id of changes.destinations.deleted) {
-                    await tx.destination.update({ where: { destination_id: id }, data: { deleted_at: new Date() } });
-                }
+                await this.processModel(tx.destination, 'destination_id', changes.destinations);
             }
 
-            // Locations
             if (changes.locations) {
-                for (const item of changes.locations.created) await tx.location.create({ data: item });
-                for (const item of changes.locations.updated) {
-                    const existing = await tx.location.findUnique({ where: { location_id: item.location_id } });
-                    const itemDate = item.updated_at ? new Date(item.updated_at) : new Date();
-
-                    if (existing && (!existing.updated_at || itemDate > existing.updated_at)) {
-                        await tx.location.update({ where: { location_id: item.location_id }, data: item });
-                    }
-                }
-                for (const id of changes.locations.deleted) {
-                    await tx.location.update({ where: { location_id: id }, data: { deleted_at: new Date() } });
-                }
+                await this.processModel(tx.location, 'location_id', changes.locations);
             }
 
-            // Expenses
             if (changes.expenses) {
-                for (const item of changes.expenses.created) await tx.expense.create({ data: item });
-                for (const item of changes.expenses.updated) {
-                    const existing = await tx.expense.findUnique({ where: { expense_id: item.expense_id } });
-                    const itemDate = item.updated_at ? new Date(item.updated_at) : new Date();
-
-                    if (existing && (!existing.updated_at || itemDate > existing.updated_at)) {
-                        await tx.expense.update({ where: { expense_id: item.expense_id }, data: item });
-                    }
-                }
-                for (const id of changes.expenses.deleted) {
-                    await tx.expense.update({ where: { expense_id: id }, data: { deleted_at: new Date() } });
-                }
+                await this.processModel(tx.expense, 'expense_id', changes.expenses);
             }
         });
 
         return { success: true };
+    }
+
+    private async processModel(
+        delegate: any,
+        idField: string,
+        changes: any,
+        customCreate?: (item: any) => Promise<void>,
+    ) {
+        for (const item of changes.created) {
+            if (customCreate) {
+                await customCreate(item);
+            } else {
+                await delegate.create({ data: item });
+            }
+        }
+
+        for (const item of changes.updated) {
+            const id = item[idField];
+            const existing = await delegate.findUnique({ where: { [idField]: id } });
+            const itemDate = item.updated_at ? new Date(item.updated_at) : new Date();
+
+            if (existing && (!existing.updated_at || itemDate > existing.updated_at)) {
+                await delegate.update({ where: { [idField]: id }, data: item });
+            }
+        }
+
+        for (const id of changes.deleted) {
+            await delegate.update({ where: { [idField]: id }, data: { deleted_at: new Date() } });
+        }
     }
 
     async pull(userId: number, lastPulledAt: number) {
@@ -99,7 +75,6 @@ export class SyncService {
             where: { user_id: userId },
             select: { trip_id: true },
         });
-        
         const tripIds = userTrips.map((t) => t.trip_id);
 
         const trips = await this.prisma.trip.findMany({
@@ -118,28 +93,18 @@ export class SyncService {
             where: { trip_id: { in: tripIds }, updated_at: { gt: lastSyncDate } },
         });
 
+        const formatChanges = (data: any[], idField: string) => ({
+            created: [],
+            updated: data.filter((item) => !item.deleted_at),
+            deleted: data.filter((item) => item.deleted_at).map((item) => item[idField]),
+        });
+
         return {
             changes: {
-                trips: {
-                    created: [],
-                    updated: trips.filter((t) => !t.deleted_at),
-                    deleted: trips.filter((t) => t.deleted_at).map((t) => t.trip_id),
-                },
-                destinations: {
-                    created: [],
-                    updated: destinations.filter((d) => !d.deleted_at),
-                    deleted: destinations.filter((d) => d.deleted_at).map((d) => d.destination_id),
-                },
-                locations: {
-                    created: [],
-                    updated: locations.filter((l) => !l.deleted_at),
-                    deleted: locations.filter((l) => l.deleted_at).map((l) => l.location_id),
-                },
-                expenses: {
-                    created: [],
-                    updated: expenses.filter((e) => !e.deleted_at),
-                    deleted: expenses.filter((e) => e.deleted_at).map((e) => e.expense_id),
-                },
+                trips: formatChanges(trips, 'trip_id'),
+                destinations: formatChanges(destinations, 'destination_id'),
+                locations: formatChanges(locations, 'location_id'),
+                expenses: formatChanges(expenses, 'expense_id'),
             },
             timestamp: Date.now(),
         };
