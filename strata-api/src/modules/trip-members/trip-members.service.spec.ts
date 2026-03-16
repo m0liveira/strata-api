@@ -35,17 +35,20 @@ describe('TripMembersService', () => {
   });
 
   describe('inviteUser', () => {
+    // Test #1: Inviter is not an accepted member
     it('Should throw ForbiddenException if inviter is not an accepted member', async () => {
       mockPrismaService.trip_Members.findFirst.mockResolvedValue(null);
       await expect(service.inviteUser('trip-1', 1, 2)).rejects.toThrow(ForbiddenException);
     });
 
+    // Test #2: Target user does not exist
     it('Should throw NotFoundException if target user does not exist', async () => {
       mockPrismaService.trip_Members.findFirst.mockResolvedValue({ status: 'ACCEPTED' });
       mockPrismaService.user.findUnique.mockResolvedValue(null);
       await expect(service.inviteUser('trip-1', 1, 2)).rejects.toThrow(NotFoundException);
     });
 
+    // Test #3: User is already invited or in the trip
     it('Should throw ConflictException if user is already invited or in the trip', async () => {
       mockPrismaService.trip_Members.findFirst
         .mockResolvedValueOnce({ status: 'ACCEPTED' })
@@ -55,10 +58,11 @@ describe('TripMembersService', () => {
       await expect(service.inviteUser('trip-1', 1, 2)).rejects.toThrow(ConflictException);
     });
 
+    // Test #4: Create invite successfully
     it('Should create invite successfully', async () => {
       mockPrismaService.trip_Members.findFirst
-        .mockResolvedValueOnce({ status: 'ACCEPTED' }) 
-        .mockResolvedValueOnce(null); 
+        .mockResolvedValueOnce({ status: 'ACCEPTED' })
+        .mockResolvedValueOnce(null);
       mockPrismaService.user.findUnique.mockResolvedValue({ user_id: 2 });
       mockPrismaService.trip_Members.create.mockResolvedValue({ status: 'PENDING' });
 
@@ -68,11 +72,13 @@ describe('TripMembersService', () => {
   });
 
   describe('acceptInvite', () => {
+    // Test #5: Invite does not exist
     it('Should throw NotFoundException if invite does not exist', async () => {
       mockPrismaService.trip_Members.findFirst.mockResolvedValue(null);
       await expect(service.acceptInvite('trip-1', 1)).rejects.toThrow(NotFoundException);
     });
 
+    // Test #6: Accept invite successfully
     it('Should accept invite successfully', async () => {
       mockPrismaService.trip_Members.findFirst.mockResolvedValue({ trip_members_id: 'uuid-1', status: 'PENDING' });
       mockPrismaService.trip_Members.update.mockResolvedValue({ status: 'ACCEPTED' });
@@ -83,11 +89,13 @@ describe('TripMembersService', () => {
   });
 
   describe('removeMemberOrDecline', () => {
+    // Test #7: Membership does not exist
     it('Should throw NotFoundException if membership does not exist', async () => {
       mockPrismaService.trip_Members.findFirst.mockResolvedValue(null);
       await expect(service.removeMemberOrDecline('trip-1', 1)).rejects.toThrow(NotFoundException);
     });
 
+    // Test #8: Decline invite successfully
     it('Should remove member successfully', async () => {
       mockPrismaService.trip_Members.findFirst.mockResolvedValue({ trip_members_id: 'uuid-1' });
       mockPrismaService.trip_Members.delete.mockResolvedValue({});

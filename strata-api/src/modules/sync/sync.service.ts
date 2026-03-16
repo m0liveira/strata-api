@@ -25,6 +25,7 @@ export class SyncService {
                         },
                     });
                 }
+                
                 for (const item of changes.trips.updated) {
                     const existing = await tx.trip.findUnique({ where: { trip_id: item.trip_id } });
                     const itemDate = item.updated_at ? new Date(item.updated_at) : new Date();
@@ -41,6 +42,7 @@ export class SyncService {
             // Destinations
             if (changes.destinations) {
                 for (const item of changes.destinations.created) await tx.destination.create({ data: item });
+
                 for (const item of changes.destinations.updated) {
                     const existing = await tx.destination.findUnique({ where: { destination_id: item.destination_id } });
                     const itemDate = item.updated_at ? new Date(item.updated_at) : new Date();
@@ -97,6 +99,7 @@ export class SyncService {
             where: { user_id: userId },
             select: { trip_id: true },
         });
+        
         const tripIds = userTrips.map((t) => t.trip_id);
 
         const trips = await this.prisma.trip.findMany({
