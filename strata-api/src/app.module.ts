@@ -10,10 +10,12 @@ import { TripMembersController } from './modules/trip-members/trip-members.contr
 import { TripMembersService } from './modules/trip-members/trip-members.service';
 import { TripMembersModule } from './modules/trip-members/trip-members.module';
 import { SyncModule } from './modules/sync/sync.module';
+import { ChatService } from './modules/chat/chat.service';
+import { ChatModule } from './modules/chat/chat.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UserModule, FriendshipModule, FollowsModule, TripMembersModule, SyncModule],
+  imports: [PrismaModule, AuthModule, UserModule, FriendshipModule, FollowsModule, TripMembersModule, SyncModule, ChatModule],
   controllers: [AppController, TripMembersController],
-  providers: [AppService, TripMembersService],
+  providers: [AppService, TripMembersService, ChatService],
 })
 export class AppModule {}

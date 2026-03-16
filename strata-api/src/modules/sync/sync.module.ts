@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
-import { SyncService } from './sync.service';
 import { SyncController } from './sync.controller';
+import { SyncService } from './sync.service';
+import { SyncGateway } from './sync.gateway';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
   imports: [PrismaModule],
-  providers: [SyncService],
-  controllers: [SyncController]
+  controllers: [SyncController],
+  providers: [SyncService, SyncGateway],
 })
-export class SyncModule { }
+export class SyncModule {}
