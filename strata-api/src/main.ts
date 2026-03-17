@@ -12,8 +12,23 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('Strata API')
-    .setDescription('API for trip management.')
+    .setTitle('API')
+    .setDescription(`
+  Strata API - Documentation
+
+  ### WebSockets
+  - **URL:** \`ws://localhost:3000\`
+  
+  **Events (Emit):**
+  - \`joinTrip\`: Send \`{ "tripId": "uuid" }\` Enters the trip chat.
+
+  - \`message\`: Send \`{ "tripId": "uuid", "message": "texto" }\` to send a message in the chat.
+
+  **Events (Listen):**
+  - \`syncNeeded\`: Receive \`{ "tripId": "uuid" }\` when someone makes changes to the trip.
+  
+  - \`newMessage\`: Receive the data of the new message in the chat.
+  `)
     .setVersion('1.0')
     .addBearerAuth()
     .build();

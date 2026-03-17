@@ -16,7 +16,6 @@ export class SyncService {
     const { changes } = data;
     const affectedTripIds = new Set<string>();
 
-    // Função auxiliar para recolher os trip_ids que sofreram alterações
     const collectTripIds = (tableChanges: any) => {
       if (!tableChanges) return;
       tableChanges.created?.forEach((item: any) => item.trip_id && affectedTripIds.add(item.trip_id));
@@ -28,7 +27,6 @@ export class SyncService {
     collectTripIds(changes.locations);
     collectTripIds(changes.expenses);
 
-    // No caso de viagens apagadas, o ID vem diretamente no array de deleted
     if (changes.trips?.deleted) {
       changes.trips.deleted.forEach((id: string) => affectedTripIds.add(id));
     }
@@ -58,12 +56,11 @@ export class SyncService {
       }
     });
 
-    // Depois de a transação ter sucesso, avisa os outros membros
     affectedTripIds.forEach((tripId) => {
       this.syncGateway.notifySyncNeeded(tripId);
     });
 
-    return { success: true };
+    return { code: 200, message: 'Sync successful' };
   }
 
   private async processModel(

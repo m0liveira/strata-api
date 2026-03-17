@@ -75,7 +75,7 @@ describe('SyncService', () => {
 
       expect(syncGateway.notifySyncNeeded).toHaveBeenCalledWith('trip-1');
       expect(syncGateway.notifySyncNeeded).toHaveBeenCalledWith('trip-2');
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual({ code: 200, message: 'Sync successful' });
     });
   });
 
