@@ -53,7 +53,7 @@ export class TripMembersService {
             where: { trip_id: tripId, user_id: userId },
         });
 
-        if (!member) 
+        if (!member)
             throw new NotFoundException('Membership or invite not found');
 
         await this.prisma.trip_Members.delete({
@@ -61,5 +61,21 @@ export class TripMembersService {
         });
 
         return { code: 200, message: 'Removed successfully' };
+    }
+
+    async getTripMembers(tripId: string, userId: number) {
+        const hasAccess = await this.prisma.trip_Members.findFirst({
+            where: { trip_id: tripId, user_id: userId, status: 'ACCEPTED' },
+        });
+
+        if (!hasAccess)
+            throw new NotFoundException('Trip not found or you do not have access to it');
+
+        const members = await this.prisma.trip_Members.findMany({
+            where: { trip_id: tripId, status: 'ACCEPTED' },
+            include: { user: { select: { user_id: true, name: true, photo: true, username: true, email: true } } },
+        });
+
+        return members;
     }
 }

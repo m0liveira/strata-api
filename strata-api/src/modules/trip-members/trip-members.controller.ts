@@ -1,4 +1,4 @@
-import { Controller, Post, Patch, Delete, Param, Request, UseGuards, ParseIntPipe } from '@nestjs/common';
+import { Controller, Post, Patch, Delete, Param, Request, UseGuards, ParseIntPipe, Get } from '@nestjs/common';
 import { TripMembersService } from './trip-members.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -8,7 +8,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 @UseGuards(JwtAuthGuard)
 @Controller('trip-members')
 export class TripMembersController {
-  constructor(private readonly tripMembersService: TripMembersService) {}
+  constructor(private readonly tripMembersService: TripMembersService) { }
 
   @Post(':tripId/invite/:targetUserId')
   @ApiOperation({ summary: 'Invite a user to a trip' })
@@ -30,5 +30,11 @@ export class TripMembersController {
   @ApiOperation({ summary: 'Leave a trip or decline an invite' })
   leaveTrip(@Request() req, @Param('tripId') tripId: string) {
     return this.tripMembersService.removeMemberOrDecline(tripId, req.user.userId);
+  }
+
+  @Get(':id/members')
+  @ApiOperation({ summary: 'Get members of a specific trip' })
+  getTripMembers(@Param('id') id: string, @Request() req: any) {
+    return this.tripMembersService.getTripMembers(id, req.user.userId);
   }
 }
