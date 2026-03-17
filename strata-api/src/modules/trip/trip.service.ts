@@ -32,11 +32,7 @@ export class TripService {
 
     async getPublicTrips() {
         const trips = await this.prisma.trip.findMany({
-            where: { visibility: 'PUBLIC', deleted_at: null },
-            include: {
-                locations: { where: { deleted_at: null } },
-                destinations: { where: { deleted_at: null } },
-            }
+            where: { visibility: 'PUBLIC', deleted_at: null }
         })
 
         if (!trips || trips.length === 0)
@@ -77,10 +73,6 @@ export class TripService {
                         status: 'ACCEPTED',
                     },
                 },
-            },
-            include: {
-                locations: { where: { deleted_at: null } },
-                destinations: { where: { deleted_at: null } }
             }
         });
 
@@ -88,5 +80,23 @@ export class TripService {
             throw new NotFoundException('No trips from friends or following found!');
 
         return trips;
+    }
+
+    async getSharedTripsById(tripId: string) {
+        const trip = await this.prisma.trip.findFirst({
+            where: {
+                trip_id: tripId,
+                deleted_at: null,
+            },
+            include: {
+                locations: { where: { trip_id: tripId, deleted_at: null } },
+                destinations: { where: { trip_id: tripId, deleted_at: null } }
+            },
+        });
+
+        if (!trip)
+            throw new NotFoundException('Trip not found!');
+
+        return trip;
     }
 }

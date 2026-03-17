@@ -27,4 +27,10 @@ export class TripController {
     getTripById(@Param('id') id: string, @Request() req: any) {
         return this.tripService.getTripById(id, req.user.userId);
     }
+
+    @Get('/discover/:id')
+    @ApiOperation({ summary: 'Get shared trip by ID' })
+    getSharedTripsById(@Param('id') id: string) {
+        return this.tripService.getSharedTripsById(id);
+    }
 }
