@@ -12,9 +12,10 @@ import { TripMembersModule } from './modules/trip-members/trip-members.module';
 import { SyncModule } from './modules/sync/sync.module';
 import { ChatService } from './modules/chat/chat.service';
 import { ChatModule } from './modules/chat/chat.module';
+import { TripModule } from './modules/trip/trip.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UserModule, FriendshipModule, FollowsModule, TripMembersModule, SyncModule, ChatModule],
+  imports: [PrismaModule, AuthModule, UserModule, FriendshipModule, FollowsModule, TripMembersModule, SyncModule, ChatModule, TripModule],
   controllers: [AppController, TripMembersController],
   providers: [AppService, TripMembersService, ChatService],
 })
