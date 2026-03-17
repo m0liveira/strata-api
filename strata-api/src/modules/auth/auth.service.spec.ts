@@ -99,7 +99,7 @@ describe('AuthService', () => {
 
     expect(result.code).toBe(200);
     expect(result.access_token).toBe('test-token');
-    expect(result.user.email).toBe(fakeUser.email);
+    expect(result.user_id).toBe(fakeUser.user_id);
   });
 
   // Test #4: Login unsuccessfully due to invalid credentials

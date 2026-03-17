@@ -92,31 +92,75 @@ describe('UserService', () => {
   });
 
   describe('getUserData', () => {
-    // Test #5: Get user own profile successfully
-    it('Should return user profile successfully without password', async () => {
+    // Test #5: Return user profile mapped to DTO successfully
+    it('Should return user profile mapped to DTO successfully', async () => {
       const userId = 1;
+
       const fakeUser = {
         user_id: 1,
         username: 'johndoe',
+        email: 'john.doe@example.com',
         name: 'John doe',
         photo: 'photo-url',
-        email: 'john.doe@example.com'
+        sent_friendships: [
+          { receiver_id: 2, status: 'ACCEPTED' },
+          { receiver_id: 6, status: 'PENDING' }
+        ],
+        received_friendships: [
+          { requester_id: 3, status: 'ACCEPTED' },
+          { requester_id: 7, status: 'PENDING' }
+        ],
+        sent_follows: [{ receiver_id: 4 }],
+        received_follows: [{ requester_id: 5 }],
+        trips: [{ trip: { trip_id: 'trip-1', name: 'Lisboa' } }],
       };
 
       mockPrismaService.user.findUnique.mockResolvedValue(fakeUser);
 
       const result = await service.getUserData(userId);
 
-      expect(result.user_id).toBe(1);
       expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
         where: { user_id: userId },
         select: {
           user_id: true,
           username: true,
+          email: true,
           name: true,
           photo: true,
-          email: true,
+          sent_friendships: {
+            where: { deleted_at: null },
+            select: { receiver_id: true, status: true }
+          },
+          received_friendships: {
+            where: { deleted_at: null },
+            select: { requester_id: true, status: true }
+          },
+          sent_follows: {
+            where: { deleted_at: null },
+            select: { receiver_id: true }
+          },
+          received_follows: {
+            where: { deleted_at: null },
+            select: { requester_id: true }
+          },
+          trips: {
+            where: { status: 'ACCEPTED', trip: { deleted_at: null } },
+            select: { trip: true }
+          },
         },
+      });
+
+      expect(result).toEqual({
+        user_id: 1,
+        username: 'johndoe',
+        email: 'john.doe@example.com',
+        name: 'John doe',
+        photo: 'photo-url',
+        pending_friends: [6, 7],
+        friends: [2, 3],
+        following: [4],
+        followers: [5],
+        trips: [{ trip_id: 'trip-1', name: 'Lisboa' }],
       });
     });
 
