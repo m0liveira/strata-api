@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UserProfileResponse } from './dto/user-data-response.dto';
 import * as bcrypt from 'bcrypt';
 
 
@@ -8,8 +9,7 @@ import * as bcrypt from 'bcrypt';
 export class UserService {
     constructor(private prisma: PrismaService) { }
 
-    // #TODO - Update this to include direct associated user data (eg. Trips, Friends & Follows)
-    async getUserData(userId: number) {
+    async getUserData(userId: number): Promise<UserProfileResponse> {
         const user = await this.prisma.user.findUnique({
             where: { user_id: userId },
             select: {
@@ -18,11 +18,53 @@ export class UserService {
                 email: true,
                 name: true,
                 photo: true,
-            },
+                sent_friendships: {
+                    where: { deleted_at: null },
+                    select: { receiver_id: true, status: true }
+                },
+                received_friendships: {
+                    where: { deleted_at: null },
+                    select: { requester_id: true, status: true }
+                },
+                sent_follows: {
+                    where: { deleted_at: null },
+                    select: { receiver_id: true }
+                },
+                received_follows: {
+                    where: { deleted_at: null },
+                    select: { requester_id: true }
+                },
+                trips: {
+                    where: {
+                        status: 'ACCEPTED',
+                        trip: { deleted_at: null }
+                    },
+                    select: { trip: true }
+                },
+            }
         });
 
-        if (!user) throw new NotFoundException('User not found!');
-        return user;
+        if (!user)
+            throw new NotFoundException('User not found!');
+
+        return {
+            user_id: user.user_id,
+            username: user.username,
+            email: user.email,
+            name: user.name,
+            photo: user.photo,
+            pending_friends: [
+                ...user.sent_friendships.filter(f => f.status === 'PENDING').map(f => f.receiver_id),
+                ...user.received_friendships.filter(f => f.status === 'PENDING').map(f => f.requester_id)
+            ],
+            friends: [
+                ...user.sent_friendships.filter(f => f.status === 'ACCEPTED').map(f => f.receiver_id),
+                ...user.received_friendships.filter(f => f.status === 'ACCEPTED').map(f => f.requester_id)
+            ],
+            following: user.sent_follows.map(f => f.receiver_id),
+            followers: user.received_follows.map(f => f.requester_id),
+            trips: user.trips.map(t => t.trip)
+        };
     }
 
     async updateProfile(userId: number, data: UpdateUserDto) {

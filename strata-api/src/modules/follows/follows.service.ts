@@ -26,7 +26,6 @@ export class FollowsService {
             data: {
                 requester_id: requesterId,
                 receiver_id: receiverId,
-                status: 'ACCEPTED',
             },
         });
     }

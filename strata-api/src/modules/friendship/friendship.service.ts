@@ -70,7 +70,6 @@ export class FriendshipService {
             data: {
                 requester_id: requesterId,
                 receiver_id: receiverId,
-                status: 'PENDING',
             },
         });
     }

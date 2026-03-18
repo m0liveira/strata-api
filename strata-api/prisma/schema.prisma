@@ -5,7 +5,7 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider     = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
 }
 
@@ -14,32 +14,32 @@ datasource db {
 }
 
 model User {
-  user_id    Int      @id @default(autoincrement())
-  photo      String?
-  name       String
-  username   String   @unique
-  email      String   @unique
-  password   String
-  
-  trips      Trip_Members[]
-  expenses   Expense[]
-  messages   Message[]
+  user_id  Int     @id @default(autoincrement())
+  photo    String? @default("/assets/images/default-avatar.png")
+  name     String
+  username String  @unique
+  email    String  @unique
+  password String
+
+  trips    Trip_Members[]
+  expenses Expense[]
+  messages Message[]
 
   sent_friendships     Friendship[] @relation("SentFriendships")
   received_friendships Friendship[] @relation("ReceivedFriendships")
-  
-  sent_follows         Follows[]    @relation("SentFollows")
-  received_follows     Follows[]    @relation("ReceivedFollows")
+
+  sent_follows     Follows[] @relation("SentFollows")
+  received_follows Follows[] @relation("ReceivedFollows")
 }
 
 model Friendship {
   requester_id Int
   receiver_id  Int
-  status       String?
+  status       String? @default("PENDING")
 
-  created_at   DateTime? @default(now())
-  updated_at   DateTime? @updatedAt
-  deleted_at   DateTime?
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  deleted_at DateTime?
 
   requester User @relation("SentFriendships", fields: [requester_id], references: [user_id])
   receiver  User @relation("ReceivedFriendships", fields: [receiver_id], references: [user_id])
@@ -50,11 +50,11 @@ model Friendship {
 model Follows {
   requester_id Int
   receiver_id  Int
-  status       String?
+  status       String? @default("ACCEPTED")
 
-  created_at   DateTime? @default(now())
-  updated_at   DateTime? @updatedAt
-  deleted_at   DateTime?
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  deleted_at DateTime?
 
   requester User @relation("SentFollows", fields: [requester_id], references: [user_id])
   receiver  User @relation("ReceivedFollows", fields: [receiver_id], references: [user_id])
@@ -63,49 +63,49 @@ model Follows {
 }
 
 model Trip {
-  trip_id         String   @id @default(uuid())
-  banner          String?
+  trip_id         String    @id @default(uuid())
+  banner          String?   @default("/assets/images/default-trip-banner.png")
   name            String
-  visibility      String?
+  visibility      String?   @default("PRIVATE")
   start_date      DateTime?
   end_date        DateTime?
   budget_level    String
   intensity_level String
-  travel_style    String
-  rating          Float?
+  travel_style    String    @default("ADVENTURE")
+  rating          Float?    @default(0)
 
-  members       Trip_Members[]
-  expenses      Expense[]
-  locations     Location[]
-  destinations  Destination[]
-  chats         Chat[]
+  members      Trip_Members[]
+  expenses     Expense[]
+  locations    Location[]
+  destinations Destination[]
+  chats        Chat[]
 
-  created_at    DateTime? @default(now())
-  updated_at    DateTime? @updatedAt
-  deleted_at    DateTime?
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  deleted_at DateTime?
 }
 
 model Trip_Members {
-  trip_members_id String   @id @default(uuid())
+  trip_members_id String @id @default(uuid())
   user_id         Int
   trip_id         String
   personal_budget Float?
   status          String @default("PENDING")
 
-  user            User     @relation(fields: [user_id], references: [user_id])
-  trip            Trip     @relation(fields: [trip_id], references: [trip_id])
+  user User @relation(fields: [user_id], references: [user_id])
+  trip Trip @relation(fields: [trip_id], references: [trip_id])
 }
 
 model Destination {
-  destination_id String    @id @default(uuid())
+  destination_id String @id @default(uuid())
   trip_id        String
   destination    String
 
-  trip           Trip      @relation(fields: [trip_id], references: [trip_id])
+  trip Trip @relation(fields: [trip_id], references: [trip_id])
 
-  created_at     DateTime? @default(now())
-  updated_at     DateTime? @updatedAt
-  deleted_at     DateTime?
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  deleted_at DateTime?
 }
 
 model Location {
@@ -116,22 +116,22 @@ model Location {
   day            Int
   ticket_url     String?
 
-  trip           Trip      @relation(fields: [trip_id], references: [trip_id])
+  trip Trip @relation(fields: [trip_id], references: [trip_id])
 
-  created_at     DateTime? @default(now())
-  updated_at     DateTime? @updatedAt
-  deleted_at     DateTime?
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  deleted_at DateTime?
 }
 
 model Expense {
-  expense_id String    @id @default(uuid())
+  expense_id String @id @default(uuid())
   trip_id    String
   user_id    Int
   type       String
   amount     Float
 
-  trip       Trip      @relation(fields: [trip_id], references: [trip_id])
-  user       User      @relation(fields: [user_id], references: [user_id])
+  trip Trip @relation(fields: [trip_id], references: [trip_id])
+  user User @relation(fields: [user_id], references: [user_id])
 
   created_at DateTime? @default(now())
   updated_at DateTime? @updatedAt
@@ -139,11 +139,11 @@ model Expense {
 }
 
 model Chat {
-  chat_id    String    @id @default(uuid())
-  trip_id    String
-  
-  messages   Message[]
-  trip       Trip      @relation(fields: [trip_id], references: [trip_id])
+  chat_id String @id @default(uuid())
+  trip_id String
+
+  messages Message[]
+  trip     Trip      @relation(fields: [trip_id], references: [trip_id])
 
   created_at DateTime? @default(now())
   updated_at DateTime? @updatedAt
@@ -151,13 +151,13 @@ model Chat {
 }
 
 model Message {
-  message_id String    @id @default(uuid())
+  message_id String @id @default(uuid())
   user_id    Int
   chat_id    String
   message    String
 
-  user       User      @relation(fields: [user_id], references: [user_id])
-  chat       Chat      @relation(fields: [chat_id], references: [chat_id])
+  user User @relation(fields: [user_id], references: [user_id])
+  chat Chat @relation(fields: [chat_id], references: [chat_id])
 
   created_at DateTime? @default(now())
   updated_at DateTime? @updatedAt

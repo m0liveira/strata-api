@@ -66,12 +66,7 @@ export class AuthService {
         return {
             code: 200,
             access_token: this.generateToken(user.user_id, user.email),
-            user: {
-                user_id: user.user_id,
-                photo: user.photo,
-                email: user.email,
-                username: user.username
-            }
+            user_id: user.user_id
         };
     }
 
