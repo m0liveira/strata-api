@@ -1,7 +1,8 @@
-import { Controller, Get, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, Request, Res } from '@nestjs/common';
 import { TripService } from './trip.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import express from 'express';
 
 @ApiTags('trips')
 @ApiBearerAuth()
@@ -32,5 +33,21 @@ export class TripController {
     @ApiOperation({ summary: 'Get shared trip by ID' })
     getSharedTripsById(@Param('id') id: string) {
         return this.tripService.getSharedTripsById(id);
+    }
+
+    @Get(':id/pdf')
+    @ApiOperation({ summary: 'Generate PDF with the trip itinerary' })
+    async getTripPdf(
+        @Param('id') id: string,
+        @Res() res: express.Response
+    ) {
+        const doc = await this.tripService.generateTripPdf(id);
+
+        res.set({
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="strata-itinerary.pdf"`,
+        });
+
+        doc.pipe(res);
     }
 }
