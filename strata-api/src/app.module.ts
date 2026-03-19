@@ -13,10 +13,12 @@ import { SyncModule } from './modules/sync/sync.module';
 import { ChatService } from './modules/chat/chat.service';
 import { ChatModule } from './modules/chat/chat.module';
 import { TripModule } from './modules/trip/trip.module';
+import { SupabaseService } from './modules/supabase/supabase.service';
+import { SupabaseModule } from './modules/supabase/supabase.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UserModule, FriendshipModule, FollowsModule, TripMembersModule, SyncModule, ChatModule, TripModule],
+  imports: [PrismaModule, AuthModule, UserModule, FriendshipModule, FollowsModule, TripMembersModule, SyncModule, ChatModule, TripModule, SupabaseModule],
   controllers: [AppController, TripMembersController],
-  providers: [AppService, TripMembersService, ChatService],
+  providers: [AppService, TripMembersService, ChatService, SupabaseService],
 })
 export class AppModule {}
