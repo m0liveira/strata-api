@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import PDFDocument from 'pdfkit';
 
 @Injectable()
 export class TripService {
@@ -98,5 +99,73 @@ export class TripService {
             throw new NotFoundException('Trip not found!');
 
         return trip;
+    }
+
+    async generateTripPdf(tripId: string): Promise<PDFKit.PDFDocument> {
+        const trip = await this.prisma.trip.findUnique({
+            where: { trip_id: tripId },
+            include: {
+                destinations: true,
+                locations: {
+                    orderBy: [
+                        { day: 'asc' },
+                        { scheduled_time: 'asc' }
+                    ]
+                }
+            },
+        });
+
+        if (!trip)
+            throw new NotFoundException('Trip not found!');
+
+        if (!trip.locations || trip.locations.length === 0)
+            throw new NotFoundException('Add at least one location to generate the PDF!');
+
+        const doc = new PDFDocument();
+
+        doc.fontSize(24).text(trip.name, { align: 'center' });
+        doc.moveDown();
+
+        doc.fontSize(12).text(`Style: ${trip.travel_style}`);
+        doc.text(`Budget: ${trip.budget_level}`);
+        doc.text(`Visibility: ${trip.visibility}`);
+        doc.moveDown();
+
+        if (trip.destinations.length > 0) {
+            const tags = trip.destinations.map(d => d.destination).join(', ');
+            doc.fontSize(12).text(`Countries/Cities to Visit: ${tags}`);
+            doc.moveDown();
+        }
+
+        doc.fontSize(18).text('Itinerary', { underline: true });
+        doc.moveDown(0.5);
+
+        let currentDay = -1;
+
+        trip.locations.forEach(loc => {
+            if (loc.day !== currentDay) {
+                doc.moveDown(0.5);
+                doc.fontSize(14).text(`Day ${loc.day}`, { underline: true });
+                doc.moveDown(0.3);
+                currentDay = loc.day;
+            }
+
+            let timeString = 'Time to define';
+
+            if (loc.scheduled_time) {
+                const date = new Date(loc.scheduled_time);
+                timeString = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+            }
+
+            doc.fontSize(12).fillColor('black').text(`• ${timeString} - ${loc.name}`);
+
+            if (loc.ticket_url) {
+                doc.fontSize(10).fillColor('blue').text('   Ticket Link', { link: loc.ticket_url });
+            }
+        });
+
+        doc.end();
+
+        return doc;
     }
 }
