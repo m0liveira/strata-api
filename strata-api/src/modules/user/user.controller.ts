@@ -17,10 +17,17 @@ export class UserController {
     return this.userService.getUserData(req.user.userId);
   }
 
-  @Get(':username')
+  @Get('username/:username')
   @ApiOperation({ summary: 'Get users profiles' })
   getPublicProfile(@Param('username') username: string) {
     return this.userService.getPublicProfile(username);
+  }
+
+  @Get('id/:ids')
+  @ApiOperation({ summary: 'Get users profiles by ID or IDs' })
+  getUsersProfileByID(@Param('ids') ids: string) {
+    const numericIds = ids.split(',').map(Number);
+    return this.userService.getUsersProfileByID(numericIds);
   }
 
   @Patch('me')
