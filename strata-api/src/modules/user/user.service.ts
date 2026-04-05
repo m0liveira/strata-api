@@ -118,4 +118,24 @@ export class UserService {
         if (!user) throw new NotFoundException('User not found!');
         return user;
     }
+
+    async getUsersProfileByID(userIdList: number | number[]) {
+        const ids = Array.isArray(userIdList) ? userIdList : [userIdList];
+
+        const users = await this.prisma.user.findMany({
+            where: {
+                user_id: { in: ids }
+            },
+            select: {
+                user_id: true,
+                username: true,
+                name: true,
+                photo: true,
+            },
+        });
+
+        if (users.length === 0) throw new NotFoundException('Users not found!');
+
+        return users;
+    }
 }
