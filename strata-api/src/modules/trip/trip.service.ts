@@ -33,7 +33,10 @@ export class TripService {
 
     async getPublicTrips() {
         const trips = await this.prisma.trip.findMany({
-            where: { visibility: 'PUBLIC', deleted_at: null }
+            where: {
+                visibility: { equals: 'PUBLIC', mode: 'insensitive' },
+                deleted_at: null
+            }
         })
 
         if (!trips || trips.length === 0)
@@ -66,7 +69,6 @@ export class TripService {
 
         const trips = await this.prisma.trip.findMany({
             where: {
-                visibility: 'PUBLIC',
                 deleted_at: null,
                 members: {
                     some: {
@@ -74,6 +76,10 @@ export class TripService {
                         status: 'ACCEPTED',
                     },
                 },
+                OR: [
+                    { visibility: { equals: 'PUBLIC', mode: 'insensitive' } },
+                    { visibility: { equals: 'FRIENDS', mode: 'insensitive' } }
+                ]
             }
         });
 

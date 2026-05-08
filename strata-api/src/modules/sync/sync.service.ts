@@ -10,7 +10,7 @@ export class SyncService {
   constructor(
     private prisma: PrismaService,
     private syncGateway: SyncGateway,
-  ) {}
+  ) { }
 
   async push(userId: number, data: SyncPushDto) {
     const { changes } = data;
@@ -18,8 +18,14 @@ export class SyncService {
 
     const collectTripIds = (tableChanges: any) => {
       if (!tableChanges) return;
-      tableChanges.created?.forEach((item: any) => item.trip_id && affectedTripIds.add(item.trip_id));
-      tableChanges.updated?.forEach((item: any) => item.trip_id && affectedTripIds.add(item.trip_id));
+      tableChanges.created?.forEach((item: any) => {
+        const id = item.trip_id || item.id;
+        if (id) affectedTripIds.add(id);
+      });
+      tableChanges.updated?.forEach((item: any) => {
+        const id = item.trip_id || item.id;
+        if (id) affectedTripIds.add(id);
+      });
     };
 
     collectTripIds(changes.trips);
@@ -33,11 +39,13 @@ export class SyncService {
 
     await this.prisma.$transaction(async (tx) => {
       if (changes.trips) {
-        await this.processModel(tx.trip, 'trip_id', changes.trips, async (item) => {
+        await this.processModel(tx.trip, 'trip_id', changes.trips, async (dataWithMappedId) => {
           await tx.trip.create({
             data: {
-              ...item,
-              members: { create: { user_id: userId, status: 'ACCEPTED' } },
+              ...dataWithMappedId,
+              members: { 
+                create: { user_id: userId, status: 'ACCEPTED' } 
+              },
             },
           });
         });
@@ -70,25 +78,37 @@ export class SyncService {
     customCreate?: (item: any) => Promise<void>,
   ) {
     for (const item of changes.created) {
+      const dataToSave = { ...item, [idField]: item.id || item[idField] };
+      delete dataToSave.id;
+
       if (customCreate) {
-        await customCreate(item);
+        await customCreate(dataToSave);
       } else {
-        await delegate.create({ data: item });
+        await delegate.create({ data: dataToSave });
       }
     }
 
     for (const item of changes.updated) {
-      const id = item[idField];
+      const id = item.id || item[idField];
+      const dataToUpdate = { ...item, [idField]: id };
+      delete dataToUpdate.id;
+
       const existing = await delegate.findUnique({ where: { [idField]: id } });
       const itemDate = item.updated_at ? new Date(item.updated_at) : new Date();
 
       if (existing && (!existing.updated_at || itemDate > existing.updated_at)) {
-        await delegate.update({ where: { [idField]: id }, data: item });
+        await delegate.update({
+          where: { [idField]: id },
+          data: dataToUpdate
+        });
       }
     }
 
     for (const id of changes.deleted) {
-      await delegate.update({ where: { [idField]: id }, data: { deleted_at: new Date() } });
+      await delegate.update({
+        where: { [idField]: id },
+        data: { deleted_at: new Date() }
+      });
     }
   }
 
@@ -119,8 +139,15 @@ export class SyncService {
 
     const formatChanges = (data: any[], idField: string) => ({
       created: [],
-      updated: data.filter((item) => !item.deleted_at),
-      deleted: data.filter((item) => item.deleted_at).map((item) => item[idField]),
+      updated: data
+        .filter((item) => !item.deleted_at)
+        .map((item) => ({
+          ...item,
+          id: item[idField],
+        })),
+      deleted: data
+        .filter((item) => item.deleted_at)
+        .map((item) => item[idField]),
     });
 
     return {
