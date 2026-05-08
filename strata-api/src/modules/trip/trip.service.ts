@@ -36,13 +36,38 @@ export class TripService {
             where: {
                 visibility: { equals: 'PUBLIC', mode: 'insensitive' },
                 deleted_at: null
+            },
+            include: {
+                members: {
+                    take: 1,
+                    include: {
+                        user: {
+                            select: {
+                                username: true,
+                                photo: true
+                            }
+                        }
+                    }
+                }
             }
-        })
+        });
 
-        if (!trips || trips.length === 0)
-            throw new NotFoundException('No public trips found!');
+        if (!trips || trips.length === 0) {
+            return [];
+        }
 
-        return trips;
+        return trips.map((trip) => {
+            const { members, ...tripData } = trip;
+            const firstMemberUser = members[0]?.user;
+
+            return {
+                ...tripData,
+                creator: {
+                    username: firstMemberUser?.username || null,
+                    photo: firstMemberUser?.photo || null,
+                }
+            };
+        });
     }
 
     async getFriendSharedTrips(userId: number) {
@@ -65,7 +90,7 @@ export class TripService {
         const socialIds = [...new Set([...followingIds, ...friendIds])];
 
         if (socialIds.length === 0)
-            throw new NotFoundException('No friends or following found!');
+            return [];
 
         const trips = await this.prisma.trip.findMany({
             where: {
@@ -79,14 +104,39 @@ export class TripService {
                 OR: [
                     { visibility: { equals: 'PUBLIC', mode: 'insensitive' } },
                     { visibility: { equals: 'FRIENDS', mode: 'insensitive' } }
-                ]
+                ],
+                NOT: { members: { some: { user_id: userId } } }
+            },
+            include: {
+                members: {
+                    take: 1,
+                    include: {
+                        user: {
+                            select: {
+                                username: true,
+                                photo: true
+                            }
+                        }
+                    }
+                }
             }
         });
 
         if (!trips || trips.length === 0)
-            throw new NotFoundException('No trips from friends or following found!');
+            return [];
 
-        return trips;
+        return trips.map((trip) => {
+            const { members, ...tripData } = trip;
+            const firstMemberUser = members[0]?.user;
+
+            return {
+                ...tripData,
+                creator: {
+                    username: firstMemberUser?.username || null,
+                    photo: firstMemberUser?.photo || null,
+                }
+            };
+        });
     }
 
     async getSharedTripsById(tripId: string) {
