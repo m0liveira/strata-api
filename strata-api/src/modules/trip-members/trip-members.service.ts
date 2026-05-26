@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -77,5 +77,40 @@ export class TripMembersService {
         });
 
         return members;
+    }
+
+    async getTripInvites(userId: number) {
+        const invites = await this.prisma.trip_Members.findMany({
+            where: { status: 'PENDING', user_id: userId },
+            include: {
+                trip: {
+                    select: {
+                        banner: true,
+                        name: true,
+                        start_date: true,
+                    }
+                },
+            },
+        });
+
+        return invites;
+    }
+
+    async updateBudget(tripId: string, userId: number, personal_budget: number | null) {
+        if (personal_budget !== null && personal_budget < 0) {
+            throw new BadRequestException('Budget cannot be negative');
+        }
+
+        const user = await this.prisma.trip_Members.findFirst({
+            where: { trip_id: tripId, user_id: userId, status: 'ACCEPTED' },
+        });
+
+        if (!user)
+            throw new NotFoundException('User not found in the trip');
+
+        return this.prisma.trip_Members.update({
+            where: { trip_members_id: user.trip_members_id },
+            data: { personal_budget: personal_budget },
+        });
     }
 }

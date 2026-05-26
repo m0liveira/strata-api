@@ -38,6 +38,11 @@ export class TripService {
                 deleted_at: null
             },
             include: {
+                destinations: {
+                    select: {
+                        destination: true,
+                    }
+                },
                 members: {
                     take: 1,
                     include: {
@@ -57,11 +62,12 @@ export class TripService {
         }
 
         return trips.map((trip) => {
-            const { members, ...tripData } = trip;
+            const { members, destinations, ...tripData } = trip;
             const firstMemberUser = members[0]?.user;
 
             return {
                 ...tripData,
+                destinations: destinations.map(d => d.destination),
                 creator: {
                     username: firstMemberUser?.username || null,
                     photo: firstMemberUser?.photo || null,
@@ -108,6 +114,11 @@ export class TripService {
                 NOT: { members: { some: { user_id: userId } } }
             },
             include: {
+                destinations: {
+                    select: {
+                        destination: true,
+                    }
+                },
                 members: {
                     take: 1,
                     include: {
@@ -126,11 +137,12 @@ export class TripService {
             return [];
 
         return trips.map((trip) => {
-            const { members, ...tripData } = trip;
+            const { members, destinations, ...tripData } = trip;
             const firstMemberUser = members[0]?.user;
 
             return {
                 ...tripData,
+                destinations: destinations.map(d => d.destination),
                 creator: {
                     username: firstMemberUser?.username || null,
                     photo: firstMemberUser?.photo || null,

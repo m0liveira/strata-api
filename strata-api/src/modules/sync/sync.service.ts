@@ -37,14 +37,44 @@ export class SyncService {
       changes.trips.deleted.forEach((id: string) => affectedTripIds.add(id));
     }
 
+    if (changes.locations?.deleted && changes.locations.deleted.length > 0) {
+      const deletedLocs = await this.prisma.location.findMany({
+        where: { location_id: { in: changes.locations.deleted } },
+        select: { trip_id: true },
+      });
+      deletedLocs.forEach((loc) => {
+        if (loc.trip_id) affectedTripIds.add(loc.trip_id);
+      });
+    }
+
+    if (changes.expenses?.deleted && changes.expenses.deleted.length > 0) {
+      const deletedExpenses = await this.prisma.expense.findMany({
+        where: { expense_id: { in: changes.expenses.deleted } },
+        select: { trip_id: true },
+      });
+      deletedExpenses.forEach((exp) => {
+        if (exp.trip_id) affectedTripIds.add(exp.trip_id);
+      });
+    }
+
+    if (changes.destinations?.deleted && changes.destinations.deleted.length > 0) {
+      const deletedDests = await this.prisma.destination.findMany({
+        where: { destination_id: { in: changes.destinations.deleted } },
+        select: { trip_id: true },
+      });
+      deletedDests.forEach((dest) => {
+        if (dest.trip_id) affectedTripIds.add(dest.trip_id);
+      });
+    }
+
     await this.prisma.$transaction(async (tx) => {
       if (changes.trips) {
         await this.processModel(tx.trip, 'trip_id', changes.trips, async (dataWithMappedId) => {
           await tx.trip.create({
             data: {
               ...dataWithMappedId,
-              members: { 
-                create: { user_id: userId, status: 'ACCEPTED' } 
+              members: {
+                create: { user_id: userId, status: 'ACCEPTED' }
               },
             },
           });

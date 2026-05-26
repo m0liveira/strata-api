@@ -26,7 +26,9 @@ export class ChatGateway {
     ) {
         const userId = client.data.user?.sub || client.data.user?.id || client.data.user?.userId;
 
-        if (!userId) return;
+        if (!userId) {
+            console.error(`[SOCKET] Trying to send message unauthenticated ${data.tripId}`);
+            return};
 
         try {
             const savedMessage = await this.chatService.saveMessage(data.tripId, userId, data.message);
